@@ -2,15 +2,19 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import os, hashlib
 
+# 1. Создаем папку-сейф при запуске (если её нет)
+VAULT_NAME = "SafePic_Vault"
+if not os.path.exists(VAULT_NAME):
+    os.makedirs(VAULT_NAME)
 
-# 1. Функция XOR (железная логика через хеш пароля)
+
+# 2. Функция XOR (хеш-ключ)
 def xor_logic(data, password):
-    # Хешируем пароль в 32-байтный ключ, чтобы исключить ошибки кодировки
     key = hashlib.sha256(password.encode('utf-8')).digest()
     return bytearray(b ^ key[i % len(key)] for i, b in enumerate(data))
 
 
-# 2. Выбор файла (исправлен баг с путями Windows)
+# 3. Выбор файла
 def pick_file():
     path = filedialog.askopenfilename()
     if path:
@@ -18,14 +22,13 @@ def pick_file():
         entry_path.insert(0, str(path))
 
 
-# 3. Главная логика
+# 4. Главная логика
 def run_action(mode):
     path = entry_path.get().strip()
     passw = entry_key.get().strip()
 
     if not path or not os.path.exists(path):
-        return messagebox.showerror("Ошибка", "Сначала выберите файл через ОБЗОР!")
-
+        return messagebox.showerror("Ошибка", "Файл не выбран!")
     if not passw:
         return messagebox.showerror("Ошибка", "Введите пароль!")
 
@@ -34,52 +37,69 @@ def run_action(mode):
             data = f.read()
 
         result = xor_logic(data, passw)
+        file_name = os.path.basename(path)
 
         if mode == "enc":
-            # Шифруем: добавляем расширение .locked
-            out_path = path + ".locked"
+            # Шифруем и сохраняем В ПАПКУ-СЕЙФ
+            out_name = file_name + ".locked"
+            out_path = os.path.join(VAULT_NAME, out_name)
+
             with open(out_path, "wb") as f:
                 f.write(result)
 
-            # АВТО-ОБНОВЛЕНИЕ: подставляем новый путь в поле
+            # БЕЗОПАСНОСТЬ: Удаляем исходное изображение
+            try:
+                os.remove(path)
+                status_msg = f"Зашифровано! Оригинал удален.\nФайл перемещен в: {VAULT_NAME}"
+            except:
+                status_msg = f"Зашифровано! Файл в папке: {VAULT_NAME}\n(Оригинал удалить не удалось, закройте его в других программах)"
+
+            # Обновляем путь в поле для мгновенного теста
             entry_path.delete(0, tk.END)
-            entry_path.insert(0, out_path)
+            entry_path.insert(0, os.path.abspath(out_path))
+            messagebox.showinfo("Успех", status_msg)
 
-            messagebox.showinfo("Успех", f"Зашифровано!\nПуть в поле обновлен на: {os.path.basename(out_path)}")
         else:
-            # Расшифровываем: создаем файл _READY в той же папке
-            if path.endswith(".locked"):
-                out_path = path.replace(".locked", "_READY.png")
-            else:
-                out_path = os.path.join(os.path.dirname(path), "RESTORED_PHOTO.png")
+            # Расшифровка: результат тоже сохраняем в папку-сейф
+            clean_name = "READY_" + file_name.replace(".locked", "")
+            # Если расширение потерялось, добавим стандартное
+            if "." not in clean_name:
+                clean_name += ".png"
+
+            out_path = os.path.join(VAULT_NAME, clean_name)
 
             with open(out_path, "wb") as f:
                 f.write(result)
 
-            # Пробуем открыть готовую картинку
+            # Открываем готовую картинку
             os.startfile(os.path.abspath(out_path))
-            messagebox.showinfo("Успех", f"Расшифровано!\nФайл открыт: {os.path.basename(out_path)}")
+            messagebox.showinfo("Успех", f"Расшифровано!\nФайл сохранен в: {VAULT_NAME}")
 
     except Exception as e:
-        messagebox.showerror("Ошибка", f"Произошла ошибка: {e}")
+        messagebox.showerror("Ошибка", f"Ошибка: {e}")
 
 
-# 4. Интерфейс (GUI)
+# 5. Интерфейс (GUI)
 root = tk.Tk()
-root.title("SafePic Private v30")
+root.title("SafePic")  # Убрали версию и лишние слова
 root.geometry("450x280")
 
-tk.Label(root, text="1. Выберите файл (скриншот или фото):", font='Arial 10').pack(pady=5)
+# Предупреждение
+tk.Label(root, text="ВНИМАНИЕ: Оригинал удаляется после шифрования!", fg="red", font='Arial 9 bold').pack(pady=10)
+
+tk.Label(root, text="1. Выберите файл:", font='Arial 10').pack()
 entry_path = tk.Entry(root, width=50);
-entry_path.pack()
+entry_path.pack(pady=2)
 tk.Button(root, text="ОБЗОР", command=pick_file).pack(pady=5)
 
-tk.Label(root, text="2. Ваш секретный пароль:", font='Arial 10 bold').pack(pady=5)
-entry_key = tk.Entry(root, width=50);
-entry_key.pack()
+tk.Label(root, text="2. Ваш секретный пароль:", font='Arial 10 bold').pack()
+entry_key = tk.Entry(root, width=50, show="*");
+entry_key.pack(pady=2)  # Скрываем пароль звездочками
+
+tk.Label(root, text=f"Рабочая папка: /{VAULT_NAME}", fg="gray").pack(pady=10)
 
 f = tk.Frame(root);
-f.pack(pady=20)
+f.pack(pady=10)
 tk.Button(f, text="ЗАШИФРОВАТЬ", bg="#d9534f", fg="white", width=15, height=2,
           command=lambda: run_action("enc")).pack(side="left", padx=10)
 tk.Button(f, text="РАСШИФРОВАТЬ", bg="#5cb82e", fg="white", width=15, height=2,
