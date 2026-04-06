@@ -3,14 +3,14 @@ from tkinter import filedialog, messagebox
 import os, hashlib
 
 
-
+# 1. Функция XOR (железная логика через хеш пароля)
 def xor_logic(data, password):
-    # Превращаем пароль в 32-байтный ключ
+    # Хешируем пароль в 32-байтный ключ, чтобы исключить ошибки кодировки
     key = hashlib.sha256(password.encode('utf-8')).digest()
     return bytearray(b ^ key[i % len(key)] for i, b in enumerate(data))
 
 
-
+# 2. Выбор файла (исправлен баг с путями Windows)
 def pick_file():
     path = filedialog.askopenfilename()
     if path:
@@ -18,68 +18,71 @@ def pick_file():
         entry_path.insert(0, str(path))
 
 
-
+# 3. Главная логика
 def run_action(mode):
     path = entry_path.get().strip()
     passw = entry_key.get().strip()
 
-    if not path or not os.path.exists(path) or not passw:
-        return messagebox.showerror("Ошибка", "Выбери файл и введи пароль!")
+    if not path or not os.path.exists(path):
+        return messagebox.showerror("Ошибка", "Сначала выберите файл через ОБЗОР!")
+
+    if not passw:
+        return messagebox.showerror("Ошибка", "Введите пароль!")
 
     try:
         with open(path, "rb") as f:
             data = f.read()
 
-
         result = xor_logic(data, passw)
 
         if mode == "enc":
+            # Шифруем: добавляем расширение .locked
+            out_path = path + ".locked"
+            with open(out_path, "wb") as f:
+                f.write(result)
 
-            out_path = path + ".safe"
-            msg = "Зашифровано!"
+            # АВТО-ОБНОВЛЕНИЕ: подставляем новый путь в поле
+            entry_path.delete(0, tk.END)
+            entry_path.insert(0, out_path)
+
+            messagebox.showinfo("Успех", f"Зашифровано!\nПуть в поле обновлен на: {os.path.basename(out_path)}")
         else:
-
-            if path.endswith(".safe"):
-                out_path = path.replace(".safe", "_RECOVERED.png")
+            # Расшифровываем: создаем файл _READY в той же папке
+            if path.endswith(".locked"):
+                out_path = path.replace(".locked", "_READY.png")
             else:
-                out_path = "RESULT_SCREENSHOT.png"
-            msg = "Расшифровано!"
+                out_path = os.path.join(os.path.dirname(path), "RESTORED_PHOTO.png")
 
-        with open(out_path, "wb") as f:
-            f.write(result)
-            f.flush()
-            os.fsync(f.fileno())
+            with open(out_path, "wb") as f:
+                f.write(result)
 
-        messagebox.showinfo("Успех", f"{msg}\nФайл: {os.path.basename(out_path)}")
-
-        if mode == "dec":
-
+            # Пробуем открыть готовую картинку
             os.startfile(os.path.abspath(out_path))
+            messagebox.showinfo("Успех", f"Расшифровано!\nФайл открыт: {os.path.basename(out_path)}")
 
     except Exception as e:
-        messagebox.showerror("Ошибка", f"Ошибка: {e}")
+        messagebox.showerror("Ошибка", f"Произошла ошибка: {e}")
 
 
-
+# 4. Интерфейс (GUI)
 root = tk.Tk()
-root.title("PNG Crypt v28")
-root.geometry("400x250")
+root.title("SafePic Private v30")
+root.geometry("450x280")
 
-tk.Label(root, text="1. Выбери скриншот (.png):").pack(pady=5)
-entry_path = tk.Entry(root, width=45);
+tk.Label(root, text="1. Выберите файл (скриншот или фото):", font='Arial 10').pack(pady=5)
+entry_path = tk.Entry(root, width=50);
 entry_path.pack()
 tk.Button(root, text="ОБЗОР", command=pick_file).pack(pady=5)
 
-tk.Label(root, text="2. Пароль:").pack(pady=5)
-entry_key = tk.Entry(root, width=45);
+tk.Label(root, text="2. Ваш секретный пароль:", font='Arial 10 bold').pack(pady=5)
+entry_key = tk.Entry(root, width=50);
 entry_key.pack()
 
 f = tk.Frame(root);
 f.pack(pady=20)
-tk.Button(f, text="ЗАШИФРОВАТЬ", bg="#ff4d4d", fg="white", width=15, command=lambda: run_action("enc")).pack(
-    side="left", padx=10)
-tk.Button(f, text="РАСШИФРОВАТЬ", bg="#2eb82e", fg="white", width=15, command=lambda: run_action("dec")).pack(
-    side="left")
+tk.Button(f, text="ЗАШИФРОВАТЬ", bg="#d9534f", fg="white", width=15, height=2,
+          command=lambda: run_action("enc")).pack(side="left", padx=10)
+tk.Button(f, text="РАСШИФРОВАТЬ", bg="#5cb82e", fg="white", width=15, height=2,
+          command=lambda: run_action("dec")).pack(side="left")
 
 root.mainloop()
-
