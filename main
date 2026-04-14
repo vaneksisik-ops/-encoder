@@ -95,7 +95,6 @@ def start_app():
 
         root.mainloop()
     else:
-        # Если ключ неверный, просто выводим ошибку
         from tkinter import messagebox
         root_err = tk.Tk()
         root_err.withdraw()
