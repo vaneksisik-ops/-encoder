@@ -2,18 +2,14 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import os, hashlib
 
-# Путь к файлу, который будет "пропуском"
 AUTH_FILE = ".session_token"
 VAULT_NAME = "SafePic"
-
 
 def xor_logic(data, password):
     key = hashlib.sha256(password.encode('utf-8')).digest()
     return bytearray(b ^ key[i % len(key)] for i, b in enumerate(data))
 
-
 def open_main_window():
-    """Основной интерфейс программы"""
     if not os.path.exists(VAULT_NAME):
         os.makedirs(VAULT_NAME)
 
@@ -59,53 +55,39 @@ def open_main_window():
     root.title("SafePic")
     root.geometry("800x500")
 
-    # Сетка и кнопки (весь твой UI из оригинала)
-    left_wrap = tk.Frame(root);
+    left_wrap = tk.Frame(root)
     left_wrap.pack(side="left", anchor="nw", padx=20, pady=20)
     tk.Label(left_wrap, text="ВНИМАНИЕ: Оригинал удаляется!", fg="red", font='Arial 10 bold').pack(anchor="w")
     tk.Label(left_wrap, text="1. Выберите файл:", font='Arial 10').pack(anchor="w", pady=(15, 0))
-    entry_path = tk.Entry(left_wrap, width=50);
+    entry_path = tk.Entry(left_wrap, width=50)
     entry_path.pack(anchor="w", pady=5)
     tk.Button(left_wrap, text="ОБЗОР", command=pick_file, width=10).pack(anchor="w")
 
     tk.Label(left_wrap, text="2. Ваш секретный пароль:", font='Arial 10 bold').pack(anchor="w", pady=(15, 0))
-    entry_key = tk.Entry(left_wrap, width=50, show="*");
+    entry_key = tk.Entry(left_wrap, width=50, show="*")
     entry_key.pack(anchor="w", pady=5)
 
-    right_wrap = tk.Frame(root);
+    right_wrap = tk.Frame(root)
     right_wrap.pack(side="right", anchor="ne", padx=20, pady=20)
     tk.Label(right_wrap, text="Имя файла шифрования:", font='Arial 10 bold').pack(anchor="e")
-    entry_new_name = tk.Entry(right_wrap, width=30);
+    entry_new_name = tk.Entry(right_wrap, width=30)
     entry_new_name.pack(anchor="e", pady=5)
 
-    btns = tk.Frame(root);
+    btns = tk.Frame(root)
     btns.place(x=20, y=380)
-    tk.Button(btns, text="ЗАШИФРОВАТЬ", bg="#d9534f", fg="white", width=16, height=2,
-              command=lambda: run_action("enc")).pack(side="left", padx=5)
-    tk.Button(btns, text="РАСШИФРОВАТЬ", bg="#5cb82e", fg="white", width=16, height=2,
-              command=lambda: run_action("dec")).pack(side="left", padx=5)
+    tk.Button(btns, text="ЗАШИФРОВАТЬ", bg="#d9534f", fg="white", width=16, height=2, command=lambda: run_action("enc")).pack(side="left", padx=5)
+    tk.Button(btns, text="РАСШИФРОВАТЬ", bg="#5cb82e", fg="white", width=16, height=2, command=lambda: run_action("dec")).pack(side="left", padx=5)
 
     root.mainloop()
 
-
 def check_auth():
-
-    keys = ["7gT2mN9pL1", "xR5vB8kQ3z", "4nJ1pW6sM0", "Y9tL2vC5xR", "3mK7nP1qW8", "bV4xZ9lS2t", "G5hJ8kF3dR",
-            "P1qN6mB9vX", "sL4tY7wQ2z", "kM8nP0lV5x", "2bH6jK9mR3", "T7vC4xZ1qP", "W5sL8kG2hN", "9pJ3mR6vT1",
-            "X4zB7nL0kQ", "rT2vM5pW8x", "G1hY4nK7mS", "3pL6vR9tC2", "Z8xQ1wK4jP", "V5nB8mD2sF", "9kR3tW6yL1",
-            "fH4jK7nS0p", "M2vX5zC8bR", "Q7wP1sL4kG", "6nT9mR2vW5", "xZ3vB6nN9m", "L1kP4jH7sG", "8rT2yW5qZ0",
-            "C3vX6bN9mM", "P5lK8jH2gD", "7uY4tR1eW8", "hG5fD2sA9p", "vC6xZ3qA0s", "mB9nV6cX3z", "tY7rE4wQ1p",
-            "nM8bV5cC2x", "kL9jH6gF3d", "rE1tY4uI7o", "xZ2cC5vB8n", "aS3dF6gH9j"]
-
-
+    keys = ["7gT2mN9pL1", "xR5vB8kQ3z", "4nJ1pW6sM0", "Y9tL2vC5xR", "3mK7nP1qW8", "bV4xZ9lS2t", "G5hJ8kF3dR", "P1qN6mB9vX", "sL4tY7wQ2z", "kM8nP0lV5x", "2bH6jK9mR3", "T7vC4xZ1qP", "W5sL8kG2hN", "9pJ3mR6vT1", "X4zB7nL0kQ", "rT2vM5pW8x", "G1hY4nK7mS", "3pL6vR9tC2", "Z8xQ1wK4jP", "V5nB8mD2sF", "9kR3tW6yL1", "fH4jK7nS0p", "M2vX5zC8bR", "Q7wP1sL4kG", "6nT9mR2vW5", "xZ3vB6nN9m", "L1kP4jH7sG", "8rT2yW5qZ0", "C3vX6bN9mM", "P5lK8jH2gD", "7uY4tR1eW8", "hG5fD2sA9p", "vC6xZ3qA0s", "mB9nV6cX3z", "tY7rE4wQ1p", "nM8bV5cC2x", "kL9jH6gF3d", "rE1tY4uI7o", "xZ2cC5vB8n", "aS3dF6gH9j"]
     if os.path.exists(AUTH_FILE):
         open_main_window()
         return
 
-
     def verify():
         if auth_entry.get().strip() in keys:
-
             with open(AUTH_FILE, "w") as f:
                 f.write("authorized")
             auth_win.destroy()
@@ -121,7 +103,6 @@ def check_auth():
     auth_entry.pack(pady=5)
     tk.Button(auth_win, text="ОК", command=verify).pack(pady=5)
     auth_win.mainloop()
-
 
 if __name__ == "__main__":
     check_auth()
